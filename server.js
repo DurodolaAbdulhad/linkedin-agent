@@ -7,7 +7,10 @@ import campaignRoutes from './routes/campaigns.js';
 import twitterRoutes from './routes/twitter.js';
 import analyticsRoutes from './routes/analytics.js';
 import schedulerRoutes from './routes/scheduler.js';
+import resourceRoutes from './routes/resources.js';
+import settingsRoutes from './routes/settings.js';
 import { startScheduler } from './utils/messageScheduler.js';
+import { initializeResources } from './models/Resource.js';
 
 const app = express();
 
@@ -25,6 +28,8 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/twitter', twitterRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/scheduler', schedulerRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -35,9 +40,14 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
-  console.log('🚀 Week 5: Autonomous Sales Machine activated');
-  console.log('📨 Message Scheduler starting...');
+  console.log('🚀 Week 5: Autonomous Sales Machine + Resource Library');
+  console.log('📚 Initializing resource library...');
 
+  // Initialize resources on startup
+  initializeResources();
+  console.log('✓ Resource library loaded');
+
+  console.log('📨 Message Scheduler starting...');
   // Start autonomous message scheduler (check every 5 minutes)
   startScheduler(5);
 });
