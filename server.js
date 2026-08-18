@@ -11,10 +11,16 @@ import resourceRoutes from './routes/resources.js';
 import settingsRoutes from './routes/settings.js';
 import focusRoutes from './routes/focus.js';
 import productsRoutes from './routes/products.js';
+import audiencesRoutes from './routes/audiences.js';
+import offersRoutes from './routes/offers.js';
+import audienceResourcesRoutes from './routes/audience-resources.js';
 import { startScheduler } from './utils/messageScheduler.js';
 import { initializeResources } from './models/Resource.js';
 import { initializeFocus } from './models/Focus.js';
 import { initializeProducts } from './models/Product.js';
+import { initializeAudiences } from './models/Audience.js';
+import { initializeOffers } from './models/Offer.js';
+import { initializeAudienceResources } from './models/AudienceResource.js';
 
 const app = express();
 
@@ -36,6 +42,9 @@ app.use('/api/resources', resourceRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/focus', focusRoutes);
 app.use('/api/products', productsRoutes);
+app.use('/api/audiences', audiencesRoutes);
+app.use('/api/offers', offersRoutes);
+app.use('/api/audience-resources', audienceResourcesRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -46,7 +55,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
-  console.log('🚀 Phase 1: Founder GTM Operating System - Focus & Products');
+  console.log('🚀 Phase 2: Audience Profiles & Offer Configuration');
   console.log('📚 Initializing resources...');
 
   initializeResources();
@@ -59,6 +68,18 @@ app.listen(PORT, () => {
   console.log('📦 Initializing products...');
   initializeProducts();
   console.log('✓ Products loaded (Ascent Finance, Learn, Corporate)');
+
+  console.log('👥 Initializing audiences...');
+  initializeAudiences();
+  console.log('✓ 8 audience profiles loaded');
+
+  console.log('🎁 Initializing offers...');
+  initializeOffers();
+  console.log('✓ 9 product offers configured');
+
+  console.log('🔗 Initializing audience resource mappings...');
+  initializeAudienceResources();
+  console.log('✓ Resource-to-audience-to-funnel mappings loaded');
 
   console.log('📨 Message Scheduler starting...');
   startScheduler(5);
