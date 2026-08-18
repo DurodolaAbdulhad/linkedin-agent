@@ -17,6 +17,7 @@ import audienceResourcesRoutes from './routes/audience-resources.js';
 import eventsRoutes from './routes/events.js';
 import automationRulesRoutes from './routes/automation-rules.js';
 import campaignAutomationRoutes from './routes/campaign-automation.js';
+import automationExecutionRoutes from './routes/automation-execution.js';
 import { startScheduler } from './utils/messageScheduler.js';
 import { initializeResources } from './models/Resource.js';
 import { initializeFocus } from './models/Focus.js';
@@ -54,6 +55,7 @@ app.use('/api/audience-resources', audienceResourcesRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/automation-rules', automationRulesRoutes);
 app.use('/api/campaign-automation', campaignAutomationRoutes);
+app.use('/api/automation/execute', automationExecutionRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -64,7 +66,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
-  console.log('🚀 Phase 3: Behavior-based Automation & Event Triggers');
+  console.log('🚀 Phase 4: Autonomous Execution Engine');
   console.log('📚 Initializing resources...');
 
   initializeResources();
@@ -101,6 +103,10 @@ app.listen(PORT, () => {
   console.log('📋 Initializing campaign automation tracking...');
   initializeCampaignAutomation();
   console.log('✓ Campaign automation execution tracking ready');
+
+  console.log('⚙️ Autonomous Execution Engine starting...');
+  console.log('✓ ActionExecutor ready (send DM, resource, offer, funnel updates)');
+  console.log('✓ AutomationExecutor ready (rule evaluation + action execution)');
 
   console.log('📨 Event-driven Message Scheduler starting...');
   startScheduler(5);
