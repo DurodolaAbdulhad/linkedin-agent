@@ -14,6 +14,9 @@ import productsRoutes from './routes/products.js';
 import audiencesRoutes from './routes/audiences.js';
 import offersRoutes from './routes/offers.js';
 import audienceResourcesRoutes from './routes/audience-resources.js';
+import eventsRoutes from './routes/events.js';
+import automationRulesRoutes from './routes/automation-rules.js';
+import campaignAutomationRoutes from './routes/campaign-automation.js';
 import { startScheduler } from './utils/messageScheduler.js';
 import { initializeResources } from './models/Resource.js';
 import { initializeFocus } from './models/Focus.js';
@@ -21,6 +24,9 @@ import { initializeProducts } from './models/Product.js';
 import { initializeAudiences } from './models/Audience.js';
 import { initializeOffers } from './models/Offer.js';
 import { initializeAudienceResources } from './models/AudienceResource.js';
+import { initializeAutomationRules } from './models/AutomationRule.js';
+import { initializeCampaignAutomation } from './models/CampaignAutomation.js';
+import { initializeEvents } from './models/Event.js';
 
 const app = express();
 
@@ -45,6 +51,9 @@ app.use('/api/products', productsRoutes);
 app.use('/api/audiences', audiencesRoutes);
 app.use('/api/offers', offersRoutes);
 app.use('/api/audience-resources', audienceResourcesRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/automation-rules', automationRulesRoutes);
+app.use('/api/campaign-automation', campaignAutomationRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -55,7 +64,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
-  console.log('🚀 Phase 2: Audience Profiles & Offer Configuration');
+  console.log('🚀 Phase 3: Behavior-based Automation & Event Triggers');
   console.log('📚 Initializing resources...');
 
   initializeResources();
@@ -81,6 +90,19 @@ app.listen(PORT, () => {
   initializeAudienceResources();
   console.log('✓ Resource-to-audience-to-funnel mappings loaded');
 
-  console.log('📨 Message Scheduler starting...');
+  console.log('⚡ Initializing event system...');
+  initializeEvents();
+  console.log('✓ Event tracking ready');
+
+  console.log('🤖 Initializing automation rules...');
+  initializeAutomationRules();
+  console.log('✓ 9 automation rules loaded (IF event → THEN action)');
+
+  console.log('📋 Initializing campaign automation tracking...');
+  initializeCampaignAutomation();
+  console.log('✓ Campaign automation execution tracking ready');
+
+  console.log('📨 Event-driven Message Scheduler starting...');
   startScheduler(5);
+  console.log('✓ Scheduler listening for events and triggering automations');
 });
