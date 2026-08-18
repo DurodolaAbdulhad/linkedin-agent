@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import profileRoutes from './routes/profiles.js';
 import dmRoutes from './routes/dms.js';
+import campaignRoutes from './routes/campaigns.js';
 
 const app = express();
 
@@ -11,11 +12,12 @@ app.use(express.json());
 
 // Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'LinkedIn Agent API running' });
+  res.json({ status: 'LinkedIn Agent API running - Week 4 with Drip Campaigns & ICP Scoring' });
 });
 
 app.use('/api/profiles', profileRoutes);
 app.use('/api/dms', dmRoutes);
+app.use('/api/campaigns', campaignRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {

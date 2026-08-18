@@ -46,4 +46,5 @@ router.get('/:id', (req, res) => {
   res.json(profile);
 });
 
+export { profiles };
 export default router;
