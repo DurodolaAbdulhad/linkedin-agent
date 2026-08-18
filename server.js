@@ -9,8 +9,12 @@ import analyticsRoutes from './routes/analytics.js';
 import schedulerRoutes from './routes/scheduler.js';
 import resourceRoutes from './routes/resources.js';
 import settingsRoutes from './routes/settings.js';
+import focusRoutes from './routes/focus.js';
+import productsRoutes from './routes/products.js';
 import { startScheduler } from './utils/messageScheduler.js';
 import { initializeResources } from './models/Resource.js';
+import { initializeFocus } from './models/Focus.js';
+import { initializeProducts } from './models/Product.js';
 
 const app = express();
 
@@ -30,6 +34,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/scheduler', schedulerRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/focus', focusRoutes);
+app.use('/api/products', productsRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -40,14 +46,20 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
-  console.log('🚀 Week 5: Autonomous Sales Machine + Resource Library');
-  console.log('📚 Initializing resource library...');
+  console.log('🚀 Phase 1: Founder GTM Operating System - Focus & Products');
+  console.log('📚 Initializing resources...');
 
-  // Initialize resources on startup
   initializeResources();
   console.log('✓ Resource library loaded');
 
+  console.log('🎯 Initializing focus periods...');
+  initializeFocus();
+  console.log('✓ Focus system ready');
+
+  console.log('📦 Initializing products...');
+  initializeProducts();
+  console.log('✓ Products loaded (Ascent Finance, Learn, Corporate)');
+
   console.log('📨 Message Scheduler starting...');
-  // Start autonomous message scheduler (check every 5 minutes)
   startScheduler(5);
 });
