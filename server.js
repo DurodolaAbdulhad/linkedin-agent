@@ -39,7 +39,11 @@ app.use(express.json());
 
 // Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'LinkedIn Agent API running - Week 5 Autonomous Sales Machine 🚀' });
+  res.json({
+    status: 'LinkedIn Agent API running - Week 5 Autonomous Sales Machine 🚀',
+    oauthEnabled: true,
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use('/api/profiles', profileRoutes);
