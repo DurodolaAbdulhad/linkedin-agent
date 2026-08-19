@@ -46,15 +46,16 @@ router.get('/callback', async (req, res) => {
 
   try {
     // Exchange code for access token
+    const params = new URLSearchParams();
+    params.append('grant_type', 'authorization_code');
+    params.append('code', code);
+    params.append('redirect_uri', REDIRECT_URI);
+    params.append('client_id', LINKEDIN_CLIENT_ID);
+    params.append('client_secret', LINKEDIN_CLIENT_SECRET);
+
     const tokenResponse = await axios.post(
       'https://www.linkedin.com/oauth/v2/accessToken',
-      {
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: REDIRECT_URI,
-        client_id: LINKEDIN_CLIENT_ID,
-        client_secret: LINKEDIN_CLIENT_SECRET
-      },
+      params,
       {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       }

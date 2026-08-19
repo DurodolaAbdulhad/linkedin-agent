@@ -56,15 +56,16 @@ router.get('/callback', async (req, res) => {
 
   try {
     // Exchange code for access token (Twitter OAuth 2.0)
+    const params = new URLSearchParams();
+    params.append('grant_type', 'authorization_code');
+    params.append('code', code);
+    params.append('redirect_uri', REDIRECT_URI);
+    params.append('code_verifier', tokenStore.twitterCodeVerifier);
+    params.append('client_id', TWITTER_CLIENT_ID);
+
     const tokenResponse = await axios.post(
       'https://api.twitter.com/2/oauth2/token',
-      {
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: REDIRECT_URI,
-        code_verifier: tokenStore.twitterCodeVerifier,
-        client_id: TWITTER_CLIENT_ID
-      },
+      params,
       {
         auth: {
           username: TWITTER_CLIENT_ID,
@@ -111,13 +112,14 @@ router.post('/refresh', async (req, res) => {
   }
 
   try {
+    const params = new URLSearchParams();
+    params.append('grant_type', 'refresh_token');
+    params.append('refresh_token', tokenStore.twitterRefreshToken);
+    params.append('client_id', TWITTER_CLIENT_ID);
+
     const tokenResponse = await axios.post(
       'https://api.twitter.com/2/oauth2/token',
-      {
-        grant_type: 'refresh_token',
-        refresh_token: tokenStore.twitterRefreshToken,
-        client_id: TWITTER_CLIENT_ID
-      },
+      params,
       {
         auth: {
           username: TWITTER_CLIENT_ID,
