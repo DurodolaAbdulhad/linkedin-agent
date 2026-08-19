@@ -19,6 +19,8 @@ import automationRulesRoutes from './routes/automation-rules.js';
 import campaignAutomationRoutes from './routes/campaign-automation.js';
 import automationExecutionRoutes from './routes/automation-execution.js';
 import analyticsDashboardRoutes from './routes/analytics-dashboard.js';
+import linkedinOAuthRoutes from './routes/linkedin-oauth.js';
+import twitterOAuthRoutes from './routes/twitter-oauth.js';
 import { startScheduler } from './utils/messageScheduler.js';
 import { initializeResources } from './models/Resource.js';
 import { initializeFocus } from './models/Focus.js';
@@ -58,6 +60,10 @@ app.use('/api/automation-rules', automationRulesRoutes);
 app.use('/api/campaign-automation', campaignAutomationRoutes);
 app.use('/api/automation/execute', automationExecutionRoutes);
 app.use('/api/analytics', analyticsDashboardRoutes);
+
+// OAuth Routes
+app.use('/api/linkedin', linkedinOAuthRoutes);
+app.use('/api/twitter-oauth', twitterOAuthRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -118,4 +124,9 @@ app.listen(PORT, () => {
   console.log('📨 Event-driven Message Scheduler starting...');
   startScheduler(5);
   console.log('✓ Scheduler listening for events and triggering automations');
+
+  console.log('🔐 OAuth Integration starting...');
+  console.log('✓ LinkedIn OAuth ready: /api/linkedin/authorize');
+  console.log('✓ Twitter OAuth ready: /api/twitter-oauth/authorize');
+  console.log('✓ Check status: /api/linkedin/status and /api/twitter-oauth/status');
 });

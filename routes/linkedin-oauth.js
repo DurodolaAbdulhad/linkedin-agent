@@ -1,0 +1,122 @@
+import express from 'express';
+import axios from 'axios';
+
+const router = express.Router();
+
+const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
+const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
+const REDIRECT_URI = 'https://agent.durodola.africa/api/linkedin/callback';
+
+// Store tokens in memory (replace with database in production)
+const tokenStore = {};
+
+// Step 1: Redirect to LinkedIn for authorization
+router.get('/authorize', (req, res) => {
+  const scope = 'r_liteprofile%20w_member_social%20r_messages%20w_messages';
+  const state = Math.random().toString(36).substring(7);
+
+  // Store state for verification
+  tokenStore.state = state;
+
+  const authUrl =
+    `https://www.linkedin.com/oauth/v2/authorization?` +
+    `response_type=code&client_id=${LINKEDIN_CLIENT_ID}&` +
+    `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${scope}&` +
+    `state=${state}`;
+
+  res.redirect(authUrl);
+});
+
+// Step 2: Handle callback, exchange code for access token
+router.get('/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+
+  // Verify state
+  if (state !== tokenStore.state) {
+    return res.status(401).json({ error: 'State mismatch - security validation failed' });
+  }
+
+  if (error) {
+    return res.status(400).json({ error: error, error_description: req.query.error_description });
+  }
+
+  if (!code) {
+    return res.status(400).json({ error: 'No authorization code received' });
+  }
+
+  try {
+    // Exchange code for access token
+    const tokenResponse = await axios.post(
+      'https://www.linkedin.com/oauth/v2/accessToken',
+      {
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: REDIRECT_URI,
+        client_id: LINKEDIN_CLIENT_ID,
+        client_secret: LINKEDIN_CLIENT_SECRET
+      },
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }
+    );
+
+    const { access_token, expires_in } = tokenResponse.data;
+
+    // Store token (replace with database in production)
+    tokenStore.linkedinAccessToken = access_token;
+    tokenStore.linkedinExpiresAt = Date.now() + (expires_in * 1000);
+
+    console.log('✓ LinkedIn OAuth Success');
+    console.log('✓ Access Token:', access_token.substring(0, 20) + '...');
+    console.log('✓ Expires in:', expires_in, 'seconds');
+
+    // Return success page with token
+    res.json({
+      success: true,
+      message: 'LinkedIn OAuth successful!',
+      accessToken: access_token,
+      expiresIn: expires_in,
+      expiresAt: new Date(tokenStore.linkedinExpiresAt).toISOString(),
+      instruction: 'Token stored in Render environment. Ready for DM operations.'
+    });
+  } catch (error) {
+    console.error('❌ LinkedIn OAuth Error:', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'OAuth token exchange failed',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// Get current LinkedIn token (for testing)
+router.get('/token', (req, res) => {
+  if (!tokenStore.linkedinAccessToken) {
+    return res.status(404).json({ error: 'No LinkedIn token stored' });
+  }
+
+  res.json({
+    accessToken: tokenStore.linkedinAccessToken.substring(0, 20) + '...',
+    expiresAt: new Date(tokenStore.linkedinExpiresAt).toISOString(),
+    isExpired: Date.now() > tokenStore.linkedinExpiresAt
+  });
+});
+
+// Test endpoint to verify OAuth is working
+router.get('/status', (req, res) => {
+  const hasToken = !!tokenStore.linkedinAccessToken;
+  const isExpired = hasToken && Date.now() > tokenStore.linkedinExpiresAt;
+
+  res.json({
+    configured: !!LINKEDIN_CLIENT_ID && !!LINKEDIN_CLIENT_SECRET,
+    tokenStored: hasToken,
+    isExpired: isExpired,
+    redirectUri: REDIRECT_URI,
+    message: !hasToken
+      ? 'Click /api/linkedin/authorize to start OAuth flow'
+      : isExpired
+      ? 'Token expired, click /api/linkedin/authorize to refresh'
+      : 'Token is valid and ready to use'
+  });
+});
+
+export default router;
