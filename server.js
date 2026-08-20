@@ -45,8 +45,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(publicPath));
 
-// Explicit dashboard route with fallback
-app.get('/dashboard.html', (req, res) => {
+// Simple dashboard route
+app.get('/dashboard', (req, res) => {
   const dashboardPath = path.join(publicPath, 'dashboard.html');
   if (fs.existsSync(dashboardPath)) {
     res.sendFile(dashboardPath);
