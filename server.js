@@ -140,6 +140,30 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Dashboard data API - returns all dashboard metrics
+app.get('/api/dashboard-data', async (req, res) => {
+  try {
+    const { getCampaigns } = await import('./routes/campaigns.js');
+    const { getAnalyticsSummary } = await import('./routes/analytics.js');
+
+    const campaigns = await import('./routes/campaigns.js').then(m => m.getCampaigns?.() || []);
+    const analytics = await import('./routes/analytics.js').then(m => m.getAnalyticsSummary?.() || {});
+
+    res.json({
+      campaigns: Array.isArray(campaigns) ? campaigns : [],
+      analytics: analytics || {},
+      timestamp: new Date().toISOString()
+    });
+  } catch (e) {
+    res.json({
+      campaigns: [],
+      analytics: {},
+      error: e.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 app.use('/api/profiles', profileRoutes);
 app.use('/api/dms', dmRoutes);
 app.use('/api/campaigns', campaignRoutes);
