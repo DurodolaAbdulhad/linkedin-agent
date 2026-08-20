@@ -10,59 +10,73 @@ import {
 } from '../models/DripCampaign.js';
 import { generateStagedDM, analyzeSentiment, calculateNextMessageDelay } from '../utils/stageLLM.js';
 import { scoreProspectAgainstICP } from '../models/ICP.js';
-import { profiles } from './profiles.js';
+import {
+  getAllCampaigns,
+  getCampaign,
+  createCampaign,
+  getProfile,
+} from '../services/AppwriteService.js';
 
 const router = express.Router();
 
-// GET all campaigns
-router.get('/', (req, res) => {
-  res.json(getCampaigns());
+// GET all campaigns (from Appwrite)
+router.get('/', async (req, res) => {
+  try {
+    const campaigns = await getAllCampaigns();
+    res.json(campaigns);
+  } catch (error) {
+    // Fallback to in-memory
+    res.json(getCampaigns());
+  }
 });
 
-// GET campaign by ID
-router.get('/:id', (req, res) => {
-  const campaign = getCampaignById(req.params.id);
-  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-  res.json(campaign);
+// GET campaign by ID (from Appwrite)
+router.get('/:id', async (req, res) => {
+  try {
+    const campaign = await getCampaign(req.params.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    res.json(campaign);
+  } catch (error) {
+    // Fallback to in-memory
+    const campaign = getCampaignById(req.params.id);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    res.json(campaign);
+  }
 });
 
-// GET campaigns by profile
-router.get('/profile/:profileId', (req, res) => {
-  const campaigns = getCampaignsByProfile(req.params.profileId);
-  res.json(campaigns);
-});
-
-// POST create new drip campaign (with ICP check)
+// POST create new drip campaign (save to Appwrite)
 router.post('/', async (req, res) => {
   try {
     const { profileId, platform = 'LinkedIn' } = req.body;
 
-    // Find profile
-    const profile = profiles.find(p => p._id == profileId);
+    // Find profile from Appwrite
+    const profile = await getProfile(profileId);
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
 
     // Score against ICP
     const icpScore = scoreProspectAgainstICP(profile);
     console.log(`ICP Score for ${profile.name}: ${icpScore.score} (${icpScore.fitLevel})`);
 
-    // Create campaign
-    const campaign = createDripCampaign(profileId, profile, platform, icpScore.score);
-
-    // Generate Stage 1 message immediately
+    // Generate Stage 1 message
+    let stage1Message = `Hey ${profile.name}! I noticed you're the ${profile.title} at ${profile.company}. Would love to connect.`;
     try {
-      const stage1Message = await generateStagedDM(1, profile);
-      campaign.messages[0] = {
-        stage: 1,
-        message: stage1Message,
-        generatedAt: new Date(),
-      };
+      stage1Message = await generateStagedDM(1, profile);
     } catch (error) {
       console.error('Error generating Stage 1 message:', error.message);
-      campaign.messages[0] = {
-        stage: 1,
-        message: `Hey ${profile.name}! I noticed you're the ${profile.title} at ${profile.company}. Would love to connect.`,
-      };
     }
+
+    // Create campaign in Appwrite
+    const campaignData = {
+      profileId: String(profileId),
+      platform,
+      currentStage: 1,
+      icpScore: icpScore.score,
+      messages: [{ stage: 1, message: stage1Message }],
+      replies: [],
+      scheduledMessages: [],
+    };
+
+    const campaign = await createCampaign(campaignData);
 
     res.status(201).json({
       campaign,
