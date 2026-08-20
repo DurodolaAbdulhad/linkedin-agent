@@ -132,11 +132,31 @@ app.get('/dashboard', (req, res) => {
   }
 });
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Autonomous Sales Machine API',
+    version: 'Week 5',
+    status: '🚀 LIVE',
+    storage: '🗄️ Appwrite Cloud',
+    endpoints: {
+      health: '/api/health',
+      profiles: '/api/profiles',
+      campaigns: '/api/campaigns',
+      events: '/api/events',
+      analytics: '/api/analytics/summary',
+      dashboard: 'https://claude.ai/code/artifact/b98d07ae-3cd5-4442-a558-21feeef47324'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Routes
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'LinkedIn Agent API running - Week 5 Autonomous Sales Machine 🚀',
     oauthEnabled: true,
+    storage: 'Appwrite Cloud',
     timestamp: new Date().toISOString()
   });
 });
