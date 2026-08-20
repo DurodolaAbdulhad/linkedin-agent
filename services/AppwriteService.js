@@ -1,5 +1,5 @@
 import { databases, DATABASE_ID, COLLECTIONS } from '../utils/appwrite.js';
-import { ID, Query } from 'node-appwrite';
+import { ID } from 'node-appwrite';
 
 // Profile Service
 export async function createProfile(profileData) {
@@ -183,8 +183,7 @@ export async function getAllEvents() {
   try {
     const response = await databases.listDocuments(
       DATABASE_ID,
-      COLLECTIONS.EVENTS,
-      [Query.orderDesc('$createdAt')]
+      COLLECTIONS.EVENTS
     );
 
     return response.documents.map(doc => ({
