@@ -25,6 +25,7 @@ import analyticsDashboardRoutes from './routes/analytics-dashboard.js';
 import linkedinOAuthRoutes from './routes/linkedin-oauth.js';
 import twitterOAuthRoutes from './routes/twitter-oauth.js';
 import { startScheduler } from './utils/messageScheduler.js';
+import { initializeAppwrite } from './utils/appwrite.js';
 import { initializeResources } from './models/Resource.js';
 import { initializeFocus } from './models/Focus.js';
 import { initializeProducts } from './models/Product.js';
@@ -194,9 +195,18 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`✓ Server running on http://localhost:${PORT}`);
   console.log('🚀 Phase 5: Real-time Analytics & Multi-channel Orchestration');
+
+  console.log('🌐 Connecting to Appwrite...');
+  try {
+    await initializeAppwrite();
+    console.log('✅ Appwrite connected - persistent storage enabled');
+  } catch (error) {
+    console.error('⚠️ Appwrite connection failed, falling back to in-memory storage');
+  }
+
   console.log('📚 Initializing resources...');
 
   initializeResources();
