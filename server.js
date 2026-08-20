@@ -45,13 +45,89 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(publicPath));
 
-// Explicit dashboard route
+// Explicit dashboard route with fallback
 app.get('/dashboard.html', (req, res) => {
   const dashboardPath = path.join(publicPath, 'dashboard.html');
   if (fs.existsSync(dashboardPath)) {
     res.sendFile(dashboardPath);
   } else {
-    res.status(404).json({ error: 'Dashboard not found' });
+    // Fallback: serve dashboard from memory
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Sales Machine Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    header { background: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    h1 { color: #667eea; margin-bottom: 10px; font-size: 2em; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .card h2 { color: #667eea; font-size: 1.2em; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+    .metric { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+    .metric-label { font-weight: 500; color: #666; }
+    .metric-value { font-size: 1.5em; font-weight: bold; color: #667eea; }
+    .button { background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 15px; width: 100%; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { background: #f5f5f5; padding: 12px; text-align: left; font-weight: 600; color: #666; border-bottom: 2px solid #ddd; }
+    td { padding: 12px; border-bottom: 1px solid #eee; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; background: #dff0d8; color: #3c763d; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 Autonomous Sales Machine</h1>
+      <p>Real-time Campaign & Automation Dashboard</p>
+    </header>
+    <div class="grid">
+      <div class="card">
+        <h2>📊 Campaigns</h2>
+        <div id="campaigns-content">Loading campaigns...</div>
+        <button class="button" onclick="createTestCampaign()">+ New Campaign</button>
+      </div>
+      <div class="card">
+        <h2>📈 Analytics Summary</h2>
+        <div id="analytics-content">Loading analytics...</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const API_URL = 'https://agent.durodola.africa/api';
+    async function loadDashboard() {
+      try {
+        const campaigns = await fetch(\`\${API_URL}/campaigns\`).then(r => r.json());
+        const analytics = await fetch(\`\${API_URL}/analytics/summary\`).then(r => r.json());
+
+        document.getElementById('campaigns-content').innerHTML = campaigns.length > 0
+          ? \`<table><tr><th>Campaign</th><th>Profile</th><th>Platform</th><th>Stage</th></tr>\${campaigns.slice(0,5).map(c => \`<tr><td>#\${c._id}</td><td>\${c.profileData?.name || 'N/A'}</td><td>\${c.platform}</td><td>\${c.currentStage}</td></tr>\`).join('')}</table>\`
+          : '<p>No campaigns yet</p>';
+
+        document.getElementById('analytics-content').innerHTML = \`
+          <div class="metric"><span class="metric-label">Total Campaigns</span><span class="metric-value">\${analytics.campaigns?.total || 0}</span></div>
+          <div class="metric"><span class="metric-label">Active Campaigns</span><span class="metric-value">\${analytics.campaigns?.active || 0}</span></div>
+          <div class="metric"><span class="metric-label">Total Conversions</span><span class="metric-value">\${analytics.conversions?.total || 0}</span></div>
+          <div class="metric"><span class="metric-label">Total Revenue</span><span class="metric-value">$\${(analytics.conversions?.totalRevenue || 0).toLocaleString()}</span></div>
+        \`;
+      } catch (e) {
+        document.getElementById('campaigns-content').innerHTML = '<p>Error loading data</p>';
+      }
+    }
+    loadDashboard();
+    setInterval(loadDashboard, 30000);
+  </script>
+</body>
+</html>`);
   }
 });
 
