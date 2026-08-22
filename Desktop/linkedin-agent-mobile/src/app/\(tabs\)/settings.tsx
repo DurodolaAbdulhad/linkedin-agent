@@ -50,10 +50,33 @@ export default function Settings() {
   });
   const [testResult, setTestResult] = useState(null);
   const [thresholds, setThresholds] = useState(DEFAULT_ICP_CONFIG.thresholds);
+  const [resources, setResources] = useState([
+    { id: 1, name: 'The Fundraising Playbook', type: 'ebook', url: '' },
+    { id: 2, name: 'GTM Strategy Blueprint', type: 'ebook', url: '' },
+    { id: 3, name: 'Ascent Finance Webinar: Building Financial Systems', type: 'event', url: '' },
+    { id: 4, name: 'Ascent Learn Newsletter', type: 'newsletter', url: '' },
+    { id: 5, name: 'Ascent Finance - SME Toolkit', type: 'product', url: '' },
+  ]);
+  const [showResourceModal, setShowResourceModal] = useState(false);
+  const [newResource, setNewResource] = useState({ name: '', type: 'ebook', url: '' });
 
   useEffect(() => {
     setLoading(false);
   }, []);
+
+  const evaluateCriterion = (criterion, fieldValue) => {
+    if (criterion.keywords && Array.isArray(criterion.keywords)) {
+      return criterion.keywords.some((kw) => fieldValue.includes(kw.toLowerCase()));
+    }
+    if (criterion.min !== undefined || criterion.max !== undefined) {
+      const value = parseFloat(fieldValue);
+      if (isNaN(value)) return false;
+      const passesMin = criterion.min === undefined || value >= criterion.min;
+      const passesMax = criterion.max === undefined || value <= criterion.max;
+      return passesMin && passesMax;
+    }
+    return false;
+  };
 
   const testICPScore = () => {
     let score = 0;
@@ -64,7 +87,7 @@ export default function Settings() {
     const mustHavePass = icpConfig.mustHave.every((criterion) => {
       maxScore += criterion.weight;
       const fieldValue = testProfile[criterion.field]?.toString().toLowerCase() || '';
-      const passes = criterion.keywords.some((kw) => fieldValue.includes(kw.toLowerCase()));
+      const passes = evaluateCriterion(criterion, fieldValue);
 
       if (passes) {
         score += criterion.weight;
@@ -88,7 +111,7 @@ export default function Settings() {
     icpConfig.strongSignals.forEach((criterion) => {
       maxScore += criterion.weight;
       const fieldValue = testProfile[criterion.field]?.toString().toLowerCase() || '';
-      const passes = criterion.keywords.some((kw) => fieldValue.includes(kw.toLowerCase()));
+      const passes = evaluateCriterion(criterion, fieldValue);
 
       if (passes) {
         score += criterion.weight;
@@ -102,7 +125,7 @@ export default function Settings() {
     icpConfig.niceToHave.forEach((criterion) => {
       maxScore += criterion.weight;
       const fieldValue = testProfile[criterion.field]?.toString().toLowerCase() || '';
-      const passes = criterion.keywords.some((kw) => fieldValue.includes(kw.toLowerCase()));
+      const passes = evaluateCriterion(criterion, fieldValue);
 
       if (passes) {
         score += criterion.weight;
@@ -141,6 +164,12 @@ export default function Settings() {
           onPress={() => setActiveTab('icp-scoring')}
         >
           <Text style={[styles.tabText, activeTab === 'icp-scoring' && styles.activeTabText]}>ICP Scoring</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'resources' && styles.activeTab]}
+          onPress={() => setActiveTab('resources')}
+        >
+          <Text style={[styles.tabText, activeTab === 'resources' && styles.activeTabText]}>Resources</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'strategy' && styles.activeTab]}
@@ -298,6 +327,48 @@ export default function Settings() {
         </View>
       )}
 
+      {/* RESOURCES TAB */}
+      {activeTab === 'resources' && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>📚 Resource Library</Text>
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowResourceModal(true)}>
+              <Text style={styles.addButtonText}>+ Add Resource</Text>
+            </TouchableOpacity>
+          </View>
+
+          {resources.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No resources yet. Add your first resource!</Text>
+            </View>
+          ) : (
+            resources.map((resource) => (
+              <View key={resource.id} style={styles.resourceCard}>
+                <View style={styles.resourceContent}>
+                  <Text style={styles.resourceName}>{resource.name}</Text>
+                  <View style={styles.resourceMeta}>
+                    <Text style={styles.resourceType}>{resource.type}</Text>
+                    {resource.url && <Text style={styles.resourceUrl}>{resource.url}</Text>}
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setResources(resources.filter((r) => r.id !== resource.id));
+                  }}
+                  style={styles.deleteBtn}
+                >
+                  <Text style={styles.deleteBtnText}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+
+          <TouchableOpacity style={styles.saveButton}>
+            <Text style={styles.saveButtonText}>💾 Save Resources</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* STRATEGY TAB */}
       {activeTab === 'strategy' && (
         <View style={styles.section}>
@@ -410,6 +481,81 @@ export default function Settings() {
           </View>
         </View>
       </Modal>
+
+      {/* Resource Modal */}
+      <Modal visible={showResourceModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Resource</Text>
+            <Text style={styles.modalSubtitle}>Create a new resource for your library</Text>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>Resource Name</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g., Fundraising Playbook"
+                value={newResource.name}
+                onChangeText={(text) => setNewResource({ ...newResource, name: text })}
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>Type</Text>
+              <View style={styles.typeButtons}>
+                {['ebook', 'guide', 'event', 'newsletter', 'product', 'template', 'webinar'].map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[
+                      styles.typeButton,
+                      newResource.type === t && styles.typeButtonActive,
+                    ]}
+                    onPress={() => setNewResource({ ...newResource, type: t })}
+                  >
+                    <Text
+                      style={[
+                        styles.typeButtonText,
+                        newResource.type === t && styles.typeButtonTextActive,
+                      ]}
+                    >
+                      {t}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>URL (Optional)</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g., https://example.com/resource"
+                value={newResource.url}
+                onChangeText={(text) => setNewResource({ ...newResource, url: text })}
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.button, styles.cancelBtn]} onPress={() => setShowResourceModal(false)}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.scoreBtn]}
+                onPress={() => {
+                  if (newResource.name.trim()) {
+                    setResources([...resources, { ...newResource, id: Date.now() }]);
+                    setNewResource({ name: '', type: 'ebook', url: '' });
+                    setShowResourceModal(false);
+                  }
+                }}
+              >
+                <Text style={styles.buttonText}>Add Resource</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -479,4 +625,22 @@ const styles = StyleSheet.create({
   cancelBtn: { backgroundColor: '#e5e5e5' },
   scoreBtn: { backgroundColor: '#0D9488' },
   buttonText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  addButton: { backgroundColor: '#0D9488', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6 },
+  addButtonText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  emptyCard: { backgroundColor: '#fff', borderRadius: 12, padding: 24, alignItems: 'center', marginBottom: 24 },
+  emptyText: { fontSize: 14, color: '#999', textAlign: 'center' },
+  resourceCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#eee' },
+  resourceContent: { flex: 1 },
+  resourceName: { fontSize: 14, fontWeight: '600', color: '#000', marginBottom: 6 },
+  resourceMeta: { flexDirection: 'row', gap: 8 },
+  resourceType: { fontSize: 11, color: '#0D9488', fontWeight: '600', backgroundColor: '#e0f2f1', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  resourceUrl: { fontSize: 11, color: '#666' },
+  deleteBtn: { paddingHorizontal: 8 },
+  deleteBtnText: { fontSize: 16 },
+  typeButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  typeButton: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#ddd' },
+  typeButtonActive: { backgroundColor: '#0D9488', borderColor: '#0D9488' },
+  typeButtonText: { fontSize: 11, color: '#666' },
+  typeButtonTextActive: { color: '#fff' },
 });
