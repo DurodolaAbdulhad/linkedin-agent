@@ -9,9 +9,8 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  Picker,
 } from 'react-native';
-import { getProfiles, addProfile, generateDM, type Profile, type DM } from '@/api/client';
+import { getProfiles, addProfile, generateDM, createCampaign, type Profile, type DM } from '@/api/client';
 
 export default function Profiles() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -24,8 +23,17 @@ export default function Profiles() {
     name: '',
     title: '',
     company: '',
-    painPoint: 'fundraising',
+    painPoint: 'fundraising' as string,
+    twitterHandle: '',
   });
+  const [selectedPlatforms, setSelectedPlatforms] = useState<{ LinkedIn: boolean; Twitter: boolean }>({
+    LinkedIn: true,
+    Twitter: false,
+  });
+  const [campaigningId, setCampaigningId] = useState<number | null>(null);
+  const [icpScores, setIcpScores] = useState<{ [key: number]: any }>({});
+
+  const painPointOptions = ['GTM strategy', 'fundraising', 'financial clarity', 'compliance'];
 
   const fetchProfiles = async () => {
     try {
@@ -78,6 +86,20 @@ export default function Profiles() {
     }
   };
 
+  const handleStartCampaign = async (profile: Profile) => {
+    setCampaigningId(profile._id);
+    try {
+      const result = await createCampaign(profile._id, 'LinkedIn');
+      setIcpScores({ ...icpScores, [profile._id]: result.icpScore });
+      alert(`Campaign started! ICP Fit: ${result.icpScore.fitLevel} (${result.icpScore.score}/100)`);
+    } catch (error) {
+      console.error('Failed to start campaign:', error);
+      alert('Failed to start campaign');
+    } finally {
+      setCampaigningId(null);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -123,17 +145,66 @@ export default function Profiles() {
           placeholderTextColor="#999"
         />
 
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={formData.painPoint}
-            onValueChange={(value) => setFormData({ ...formData, painPoint: value })}
-            style={styles.picker}
+        <Text style={styles.selectLabel}>Platforms:</Text>
+        <View style={styles.platformRow}>
+          <TouchableOpacity
+            style={[
+              styles.platformButton,
+              selectedPlatforms.LinkedIn && styles.platformButtonActive,
+            ]}
+            onPress={() => setSelectedPlatforms({ ...selectedPlatforms, LinkedIn: !selectedPlatforms.LinkedIn })}
           >
-            <Picker.Item label="GTM Strategy" value="GTM strategy" />
-            <Picker.Item label="Fundraising" value="fundraising" />
-            <Picker.Item label="Financial Clarity" value="financial clarity" />
-            <Picker.Item label="Compliance" value="compliance" />
-          </Picker>
+            <Text style={[styles.platformButtonText, selectedPlatforms.LinkedIn && styles.platformButtonTextActive]}>
+              LinkedIn
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.platformButton,
+              selectedPlatforms.Twitter && styles.platformButtonActive,
+            ]}
+            onPress={() => setSelectedPlatforms({ ...selectedPlatforms, Twitter: !selectedPlatforms.Twitter })}
+          >
+            <Text style={[styles.platformButtonText, selectedPlatforms.Twitter && styles.platformButtonTextActive]}>
+              Twitter/X
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {selectedPlatforms.Twitter && (
+          <TextInput
+            style={styles.input}
+            placeholder="Twitter handle (@username)"
+            value={formData.twitterHandle}
+            onChangeText={(text) => setFormData({ ...formData, twitterHandle: text })}
+            placeholderTextColor="#999"
+          />
+        )}
+
+        <View style={styles.selectContainer}>
+          <Text style={styles.selectLabel}>Pain Point:</Text>
+          <View style={styles.selectButtonsRow}>
+            {painPointOptions.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.selectButton,
+                  formData.painPoint === option && styles.selectButtonActive,
+                ]}
+                onPress={() => setFormData({ ...formData, painPoint: option })}
+              >
+                <Text
+                  style={[
+                    styles.selectButtonText,
+                    formData.painPoint === option && styles.selectButtonTextActive,
+                  ]}
+                >
+                  {option.slice(0, 8)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity style={styles.addButton} onPress={handleAddProfile}>
@@ -149,24 +220,61 @@ export default function Profiles() {
         ) : (
           profiles.map((profile) => (
             <View key={profile._id} style={styles.profileCard}>
-              <Text style={styles.profileName}>{profile.name}</Text>
-              <Text style={styles.profileSubtitle}>
-                {profile.title} at {profile.company}
-              </Text>
+              <View style={styles.profileHeader}>
+                <View style={styles.profileInfo}>
+                  <Text style={styles.profileName}>{profile.name}</Text>
+                  <Text style={styles.profileSubtitle}>
+                    {profile.title} at {profile.company}
+                  </Text>
+                </View>
+                {icpScores[profile._id] && (
+                  <View style={[
+                    styles.icpBadge,
+                    icpScores[profile._id].fitLevel === 'High' ? styles.icpHigh :
+                    icpScores[profile._id].fitLevel === 'Medium' ? styles.icpMedium :
+                    styles.icpLow
+                  ]}>
+                    <Text style={styles.icpBadgeText}>{icpScores[profile._id].fitLevel}</Text>
+                    <Text style={styles.icpScore}>{Math.round(icpScores[profile._id].score)}</Text>
+                  </View>
+                )}
+              </View>
+
               <Text style={styles.profilePain}>Pain point: {profile.painPoint}</Text>
 
-              <TouchableOpacity
-                style={[
-                  styles.generateButton,
-                  generatingId === profile._id && styles.generateButtonLoading,
-                ]}
-                onPress={() => handleGenerateDM(profile)}
-                disabled={generatingId === profile._id}
-              >
-                <Text style={styles.generateButtonText}>
-                  {generatingId === profile._id ? 'Generating...' : 'Generate DM'}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.platformBadges}>
+                <View style={styles.platformBadge}>
+                  <Text style={styles.platformBadgeText}>🔗 LinkedIn</Text>
+                </View>
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.generateButton,
+                    generatingId === profile._id && styles.generateButtonLoading,
+                  ]}
+                  onPress={() => handleGenerateDM(profile)}
+                  disabled={generatingId === profile._id}
+                >
+                  <Text style={styles.generateButtonText}>
+                    {generatingId === profile._id ? 'Generating...' : 'Generate DM'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.campaignButton,
+                    campaigningId === profile._id && styles.campaignButtonLoading,
+                  ]}
+                  onPress={() => handleStartCampaign(profile)}
+                  disabled={campaigningId === profile._id}
+                >
+                  <Text style={styles.campaignButtonText}>
+                    {campaigningId === profile._id ? 'Starting...' : 'Start Campaign'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -220,16 +328,66 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
   },
-  pickerContainer: {
-    borderWidth: 0.5,
+  selectContainer: {
+    marginBottom: 12,
+  },
+  selectLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  selectButtonsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  selectButton: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: '22%',
+  },
+  selectButtonActive: {
+    backgroundColor: '#0D9488',
+    borderColor: '#0D9488',
+  },
+  selectButtonText: {
+    fontSize: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  selectButtonTextActive: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  platformRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  platformButton: {
+    flex: 1,
+    borderWidth: 1.5,
     borderColor: '#E0E0E0',
     borderRadius: 8,
-    marginBottom: 12,
-    overflow: 'hidden',
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
   },
-  picker: {
-    height: 48,
-    color: '#333',
+  platformButtonActive: {
+    backgroundColor: '#0D9488',
+    borderColor: '#0D9488',
+  },
+  platformButtonText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  platformButtonTextActive: {
+    color: 'white',
   },
   addButton: {
     backgroundColor: '#0D9488',
@@ -264,6 +422,15 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: '#E0E0E0',
   },
+  profileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  profileInfo: {
+    flex: 1,
+  },
   profileName: {
     fontSize: 14,
     fontWeight: '600',
@@ -280,7 +447,39 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 12,
   },
+  icpBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    alignItems: 'center',
+    minWidth: 50,
+  },
+  icpHigh: {
+    backgroundColor: '#E8F5E9',
+  },
+  icpMedium: {
+    backgroundColor: '#FFF3E0',
+  },
+  icpLow: {
+    backgroundColor: '#FFEBEE',
+  },
+  icpBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#001A3D',
+  },
+  icpScore: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0D9488',
+    marginTop: 2,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   generateButton: {
+    flex: 1,
     backgroundColor: '#001A3D',
     borderRadius: 8,
     paddingVertical: 10,
@@ -293,5 +492,36 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
     fontSize: 13,
+  },
+  campaignButton: {
+    flex: 1,
+    backgroundColor: '#0D9488',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  campaignButtonLoading: {
+    opacity: 0.6,
+  },
+  campaignButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  platformBadges: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+  },
+  platformBadge: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  platformBadgeText: {
+    fontSize: 11,
+    color: '#001A3D',
+    fontWeight: '500',
   },
 });

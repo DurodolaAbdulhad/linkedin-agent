@@ -1,71 +1,56 @@
-import { BottomTabNavigationOptions, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
-import * as React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import TabBarBackground from '@/components/ui/tab-bar-background';
-
-import Dashboard from './dashboard';
-import Profiles from './profiles';
-import Drafts from './drafts';
-import Settings from './settings';
-
-const Tab = createBottomTabNavigator();
+import { Tabs } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   return (
-    <NavigationContainer independent={true}>
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarButton: HapticTab,
-          tabBarBackground: TabBarBackground,
-          tabBarActiveTintColor: '#0D9488',
-          tabBarInactiveTintColor: '#999',
-          tabBarLabelStyle: { fontSize: 12, marginTop: -8 },
-          tabBarStyle: Platform.select({
-            ios: {
-              position: 'absolute',
-            },
-            default: {},
-          }),
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: '#0D9488',
+        tabBarInactiveTintColor: '#999',
+        tabBarLabelStyle: { fontSize: 10, marginTop: -5 },
+        tabBarStyle: {
+          backgroundColor: 'white',
+          borderTopColor: '#E0E0E0',
+          borderTopWidth: 1,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <MaterialIcons name="home" size={24} color={color} />,
         }}
-      >
-        <Tab.Screen
-          name="dashboard"
-          component={Dashboard}
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-          }}
-        />
-        <Tab.Screen
-          name="profiles"
-          component={Profiles}
-          options={{
-            title: 'Profiles',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
-          }}
-        />
-        <Tab.Screen
-          name="drafts"
-          component={Drafts}
-          options={{
-            title: 'Drafts',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.fill" color={color} />,
-          }}
-        />
-        <Tab.Screen
-          name="settings"
-          component={Settings}
-          options={{
-            title: 'More',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
-          }}
-        />
-      </Tab.Navigator>
-    </NavigationContainer>
+      />
+      <Tabs.Screen
+        name="profiles"
+        options={{
+          title: 'Profiles',
+          tabBarIcon: ({ color }) => <MaterialIcons name="people" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="drafts"
+        options={{
+          title: 'Drafts',
+          tabBarIcon: ({ color }) => <MaterialIcons name="description" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'More',
+          tabBarIcon: ({ color }) => <MaterialIcons name="more-horiz" size={24} color={color} />,
+        }}
+      />
+    </Tabs>
   );
 }
