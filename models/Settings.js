@@ -1,14 +1,12 @@
-// System settings: ICP config, pain points, etc
-
+// In-memory settings store
 let settings = {
   icp: {
-    companySizeMin: 10,
-    companySizeMax: 5000,
-    industries: ['Fintech', 'SaaS', 'Edtech', 'B2B Services'],
-    targetRoles: ['Founder', 'CEO', 'CTO', 'CFO', 'Head of Sales', 'Head of Marketing'],
-    geography: ['Africa', 'Global', 'US', 'EU'],
-    growthStage: ['Startup', 'Scale-up', 'Growth'],
-    budget: 'Any',
+    targetTitles: ['Founder', 'CEO', 'CTO', 'CMO', 'COO', 'Director', 'Head of', 'VP'],
+    targetIndustries: ['Fintech', 'Healthtech', 'Edtech', 'Logistics', 'Agtech', 'SaaS'],
+    targetRegions: ['Nigeria', 'Kenya', 'Ghana', 'South Africa', 'Egypt', 'Ethiopia'],
+    companySizes: ['1-10', '11-50', '51-200'],
+    fundingStages: ['Pre-seed', 'Seed', 'Series A'],
+    minScore: 60,
   },
   painPoints: [
     'GTM strategy',
@@ -17,20 +15,26 @@ let settings = {
     'compliance',
     'team building',
     'product-market fit',
+    'market entry',
   ],
+  categories: ['tech', 'finance', 'operations', 'marketing', 'legal'],
   campaignDefaults: {
-    messageDelays: [0, 2, 4, 6, 8, 10, 14], // Days for each stage
-    autoSchedule: true,
-    schedulerInterval: 5, // Minutes
+    platform: 'LinkedIn',
+    stageDelayDays: 2,
+    maxStages: 7,
+    autoProgress: false,
   },
-  platforms: ['LinkedIn', 'Twitter'],
-  categories: ['Ascent Learn', 'Ascent Finance', 'Ascent Creative', 'General'],
 };
 
 export const getSettings = () => settings;
+export const getICP = () => settings.icp;
+export const getPainPoints = () => settings.painPoints;
+export const getCategories = () => settings.categories;
 
-export const updateICP = (updates) => {
-  settings.icp = { ...settings.icp, ...updates };
+export const getCampaignDefaults = () => settings.campaignDefaults;
+
+export const updateICP = (data) => {
+  settings.icp = { ...settings.icp, ...data };
   return settings.icp;
 };
 
@@ -40,9 +44,7 @@ export const updatePainPoints = (painPoints) => {
 };
 
 export const addPainPoint = (painPoint) => {
-  if (!settings.painPoints.includes(painPoint)) {
-    settings.painPoints.push(painPoint);
-  }
+  if (!settings.painPoints.includes(painPoint)) settings.painPoints.push(painPoint);
   return settings.painPoints;
 };
 
@@ -51,36 +53,12 @@ export const removePainPoint = (painPoint) => {
   return settings.painPoints;
 };
 
-export const updateCampaignDefaults = (updates) => {
-  settings.campaignDefaults = { ...settings.campaignDefaults, ...updates };
-  return settings.campaignDefaults;
-};
-
 export const addCategory = (category) => {
-  if (!settings.categories.includes(category)) {
-    settings.categories.push(category);
-  }
+  if (!settings.categories.includes(category)) settings.categories.push(category);
   return settings.categories;
 };
 
-export const getCategories = () => settings.categories;
-
-export const getPainPoints = () => settings.painPoints;
-
-export const getICP = () => settings.icp;
-
-export const getCampaignDefaults = () => settings.campaignDefaults;
-
-export default {
-  getSettings,
-  updateICP,
-  updatePainPoints,
-  addPainPoint,
-  removePainPoint,
-  updateCampaignDefaults,
-  addCategory,
-  getCategories,
-  getPainPoints,
-  getICP,
-  getCampaignDefaults,
+export const updateCampaignDefaults = (data) => {
+  settings.campaignDefaults = { ...settings.campaignDefaults, ...data };
+  return settings.campaignDefaults;
 };

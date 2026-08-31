@@ -1,65 +1,39 @@
-// Ideal Customer Profile definition and matching
-export const defaultICP = {
-  id: 'default',
-  name: 'Default ICP',
-  companySizeMin: 10,
-  companySizeMax: 5000,
-  industries: ['Fintech', 'SaaS', 'Edtech', 'B2B Services'],
-  targetRoles: ['Founder', 'CEO', 'CTO', 'CFO', 'Head of Sales', 'Head of Marketing'],
-  geography: ['Africa', 'Global', 'US', 'EU'],
-  growthStage: ['Startup', 'Scale-up', 'Growth'],
-  painPoints: ['Fundraising', 'GTM strategy', 'Financial clarity', 'Compliance', 'Team building', 'Product-market fit'],
-  budget: 'Any', // Any, < $1M, $1M-$10M, $10M+
-  createdAt: new Date(),
+// ICP Scoring Engine
+const ICP = {
+  targetTitles: ['Founder', 'CEO', 'CTO', 'CMO', 'COO', 'Director', 'Head of', 'VP', 'Co-Founder'],
+  targetRegions: ['Nigeria', 'Kenya', 'Ghana', 'South Africa', 'Egypt', 'Ethiopia', 'Rwanda', 'Uganda', 'Africa'],
+  targetIndustries: ['Fintech', 'Healthtech', 'Edtech', 'Logistics', 'Agtech', 'SaaS', 'Tech', 'Startup'],
+  fundingStages: ['Pre-seed', 'Seed', 'Series A', 'Early stage', 'Bootstrapped'],
 };
 
-// ICP scoring logic
-export const scoreProspectAgainstICP = (prospect, icp = defaultICP) => {
+export const scoreProspectAgainstICP = (profile) => {
   let score = 0;
-  const maxScore = 100;
+  const breakdown = {};
 
-  // Company size scoring (20 points)
-  if (prospect.companySize) {
-    if (prospect.companySize >= icp.companySizeMin && prospect.companySize <= icp.companySizeMax) {
-      score += 20;
-    } else if (prospect.companySize > icp.companySizeMax) {
-      score += 10; // Partial credit for larger company
-    }
-  }
+  // Title match (30 pts)
+  const title = (profile.title || '').toLowerCase();
+  const titleMatch = ICP.targetTitles.some(t => title.includes(t.toLowerCase()));
+  breakdown.title = titleMatch ? 30 : 0;
+  score += breakdown.title;
 
-  // Industry match (20 points)
-  if (prospect.industry && icp.industries.includes(prospect.industry)) {
-    score += 20;
-  }
+  // Region match (25 pts)
+  const location = (profile.location || profile.country || '').toLowerCase();
+  const regionMatch = ICP.targetRegions.some(r => location.includes(r.toLowerCase()));
+  breakdown.region = regionMatch ? 25 : 0;
+  score += breakdown.region;
 
-  // Role match (20 points)
-  if (prospect.title && icp.targetRoles.some(role => prospect.title.includes(role))) {
-    score += 20;
-  }
+  // Industry match (25 pts)
+  const company = (profile.company || profile.industry || '').toLowerCase();
+  const industryMatch = ICP.targetIndustries.some(i => company.includes(i.toLowerCase()));
+  breakdown.industry = industryMatch ? 25 : 0;
+  score += breakdown.industry;
 
-  // Pain point match (20 points)
-  if (prospect.painPoint && icp.painPoints.includes(prospect.painPoint)) {
-    score += 20;
-  }
+  // Pain point (20 pts)
+  const hasPainPoint = !!(profile.painPoint && profile.painPoint !== 'unknown');
+  breakdown.painPoint = hasPainPoint ? 20 : 0;
+  score += breakdown.painPoint;
 
-  // Geography match (20 points)
-  if (prospect.location && icp.geography.some(geo => prospect.location.includes(geo))) {
-    score += 20;
-  }
+  const fitLevel = score >= 80 ? 'High' : score >= 50 ? 'Medium' : 'Low';
 
-  const fitLevel = score >= 80 ? 'High' : score >= 60 ? 'Medium' : 'Low';
-
-  return {
-    score: Math.min(score, maxScore),
-    fitLevel,
-    breakdown: {
-      companySize: prospect.companySize ? (prospect.companySize >= icp.companySizeMin && prospect.companySize <= icp.companySizeMax ? 20 : 10) : 0,
-      industry: prospect.industry && icp.industries.includes(prospect.industry) ? 20 : 0,
-      role: prospect.title && icp.targetRoles.some(role => prospect.title.includes(role)) ? 20 : 0,
-      painPoint: prospect.painPoint && icp.painPoints.includes(prospect.painPoint) ? 20 : 0,
-      geography: prospect.location && icp.geography.some(geo => prospect.location.includes(geo)) ? 20 : 0,
-    }
-  };
+  return { score, fitLevel, breakdown };
 };
-
-export default { defaultICP, scoreProspectAgainstICP };

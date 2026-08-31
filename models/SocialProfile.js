@@ -1,84 +1,32 @@
-// Social media profile management (LinkedIn, Twitter/X, etc)
-
+// In-memory social profile and Twitter DM store
 let socialProfiles = [];
-let socialProfileId = 1;
+let twitterDMs = [];
+let profileId = 1;
+let dmId = 1;
 
-export const createSocialProfile = (mainProfileId, platform, handle, url = null) => {
-  const profile = {
-    _id: socialProfileId++,
-    mainProfileId, // Links to main Profile.js
-    platform, // 'LinkedIn', 'Twitter', 'Email', etc
-    handle, // @username or email
-    url, // Profile URL
-    followers: null, // For Twitter
-    engagement: null, // For Twitter - last engagement score
-    createdAt: new Date(),
-  };
-
+export const createSocialProfile = (data) => {
+  const profile = { _id: String(profileId++), ...data, createdAt: new Date() };
   socialProfiles.push(profile);
   return profile;
 };
 
 export const getSocialProfiles = () => socialProfiles;
 
-export const getSocialProfilesByMainProfile = (mainProfileId) => {
-  return socialProfiles.filter(p => p.mainProfileId == mainProfileId);
-};
+export const getSocialProfilesByMainProfile = (mainProfileId) =>
+  socialProfiles.filter(p => p.mainProfileId === String(mainProfileId));
 
-export const getSocialProfileByPlatform = (mainProfileId, platform) => {
-  return socialProfiles.find(p => p.mainProfileId == mainProfileId && p.platform === platform);
-};
-
-export const updateSocialProfile = (id, updates) => {
-  const profile = socialProfiles.find(p => p._id == id);
-  if (profile) {
-    Object.assign(profile, updates, { updatedAt: new Date() });
-  }
-  return profile;
-};
-
-// Twitter DM tracking
-let twitterDMs = [];
-let twitterDMId = 1;
-
-export const createTwitterDM = (campaignId, twitterHandle, dmText, type = 'direct') => {
-  const dm = {
-    _id: twitterDMId++,
-    campaignId,
-    twitterHandle,
-    dmText,
-    type, // 'direct' or 'public_reply'
-    status: 'draft', // draft, sent, delivered, failed
-    sentAt: null,
-    createdAt: new Date(),
-  };
-
+export const createTwitterDM = (data) => {
+  const dm = { _id: String(dmId++), ...data, status: 'pending', createdAt: new Date() };
   twitterDMs.push(dm);
   return dm;
 };
 
-export const getTwitterDMs = () => twitterDMs;
+export const getTwitterDMsByCampaign = (campaignId) =>
+  twitterDMs.filter(d => d.campaignId === String(campaignId));
 
-export const getTwitterDMsByCampaign = (campaignId) => {
-  return twitterDMs.filter(dm => dm.campaignId == campaignId);
-};
-
-export const updateTwitterDM = (id, updates) => {
-  const dm = twitterDMs.find(d => d._id == id);
-  if (dm) {
-    Object.assign(dm, updates);
-  }
-  return dm;
-};
-
-export default {
-  createSocialProfile,
-  getSocialProfiles,
-  getSocialProfilesByMainProfile,
-  getSocialProfileByPlatform,
-  updateSocialProfile,
-  createTwitterDM,
-  getTwitterDMs,
-  getTwitterDMsByCampaign,
-  updateTwitterDM,
+export const updateTwitterDM = (id, data) => {
+  const idx = twitterDMs.findIndex(d => d._id === String(id));
+  if (idx === -1) return null;
+  twitterDMs[idx] = { ...twitterDMs[idx], ...data, updatedAt: new Date() };
+  return twitterDMs[idx];
 };

@@ -1,83 +1,49 @@
+// In-memory focus periods
 let focuses = [];
-let nextFocusId = 1;
+let nextId = 1;
+
+export const initializeFocus = () => {
+  focuses = [
+    {
+      id: 1, name: 'Q3 2025 — Ascent Finance Launch', description: 'Focus on African SME financial tools',
+      startDate: '2025-07-01', endDate: '2025-09-30',
+      primaryProduct: 1, objective: 'Get first 100 SME signups', status: 'active',
+    },
+  ];
+  nextId = 2;
+};
 
 export class Focus {
-  constructor(data) {
-    this._id = nextFocusId++;
-    this.name = data.name || 'Unnamed Focus';
-    this.description = data.description || '';
-    this.startDate = data.startDate || new Date().toISOString();
-    this.endDate = data.endDate || null;
-    this.status = data.status || 'active'; // active, completed, archived
-    this.founder = data.founder || 'Durodola Abdulhad';
-    this.primaryProduct = data.primaryProduct || null;
-    this.secondaryProducts = data.secondaryProducts || [];
-    this.supportingProducts = data.supportingProducts || [];
-    this.productAllocation = data.productAllocation || {}; // { productId: percentage }
-    this.objective = data.objective || '';
-    this.targetMetrics = data.targetMetrics || {}; // { metric: value }
-    this.createdAt = new Date().toISOString();
-    this.updatedAt = new Date().toISOString();
-  }
+  static getAll() { return focuses; }
+
+  static findActive() { return focuses.find(f => f.status === 'active') || null; }
+
+  static findById(id) { return focuses.find(f => f.id === parseInt(id)) || null; }
 
   static create(data) {
-    const focus = new Focus(data);
+    const focus = { id: nextId++, ...data, status: 'active', createdAt: new Date() };
     focuses.push(focus);
     return focus;
   }
 
-  static findById(id) {
-    return focuses.find(f => f._id === id);
-  }
-
-  static findActive() {
-    return focuses.find(f => f.status === 'active');
-  }
-
-  static getAll() {
-    return focuses;
-  }
-
   static update(id, data) {
-    const focus = this.findById(id);
-    if (!focus) return null;
-
-    Object.assign(focus, data, { updatedAt: new Date().toISOString() });
-    return focus;
+    const idx = focuses.findIndex(f => f.id === parseInt(id));
+    if (idx === -1) return null;
+    focuses[idx] = { ...focuses[idx], ...data };
+    return focuses[idx];
   }
 
   static delete(id) {
-    const index = focuses.findIndex(f => f._id === id);
-    if (index > -1) {
-      focuses.splice(index, 1);
-      return true;
-    }
-    return false;
+    const idx = focuses.findIndex(f => f.id === parseInt(id));
+    if (idx === -1) return false;
+    focuses.splice(idx, 1);
+    return true;
   }
 
   static setActive(id) {
-    focuses.forEach(f => f.status = f._id === id ? 'active' : f.status);
-    return this.findById(id);
-  }
-}
-
-export function initializeFocus() {
-  if (focuses.length === 0) {
-    Focus.create({
-      name: 'Q3 2026 Growth Focus',
-      description: 'Primary focus on Ascent Finance user acquisition',
-      startDate: new Date().toISOString(),
-      endDate: null,
-      status: 'active',
-      founder: 'Durodola Abdulhad',
-      primaryProduct: 1, // Will link to Ascent Finance product ID
-      secondaryProducts: [2, 3], // Ascent Learn, Ascent Corporate
-      objective: 'Acquire 500 qualified SME customers',
-      productAllocation: {
-        '1': 60, // Ascent Finance 60%
-        '2': 25, // Ascent Learn 25%
-        '3': 15  // Ascent Corporate 15%
-      }
-    });
+    focuses.forEach(f => { f.status = 'inactive'; });
+    const focus = focuses.find(f => f.id === parseInt(id));
+    if (focus) focus.status = 'active';
+    return focus;
   }
 }

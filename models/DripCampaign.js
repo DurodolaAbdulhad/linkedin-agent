@@ -1,118 +1,53 @@
-// Drip campaign stages and templates
+// In-memory drip campaign store (Appwrite is primary persistence)
+let campaigns = [];
+let nextId = 1;
+
 export const DRIP_STAGES = {
-  PROSPECT: {
-    stage: 1,
-    name: 'Prospect & Build Rapport',
-    daysDelay: 0,
-    description: 'Initial outreach, establish connection',
-  },
-  ASK_QUESTIONS: {
-    stage: 2,
-    name: 'Ask Questions & Identify Needs',
-    daysDelay: 2,
-    description: 'Understand their pain points deeper',
-  },
-  PRESENT: {
-    stage: 3,
-    name: 'Present Solution',
-    daysDelay: 4,
-    description: 'Show how your product solves their problem',
-  },
-  OBJECTIONS: {
-    stage: 4,
-    name: 'Answer Objections',
-    daysDelay: 6,
-    description: 'Address concerns and build confidence',
-  },
-  CLOSE: {
-    stage: 5,
-    name: 'Close the Sale',
-    daysDelay: 8,
-    description: 'Ask for the meeting or commitment',
-  },
-  RESALE: {
-    stage: 6,
-    name: 'Resale & Expansion',
-    daysDelay: 10,
-    description: 'Upsell and expand the relationship',
-  },
-  REFERRAL: {
-    stage: 7,
-    name: 'Get Referrals',
-    daysDelay: 14,
-    description: 'Ask for introductions to other prospects',
-  },
+  PROSPECT: { name: 'Prospect & Build Rapport', stage: 1 },
+  DISCOVER: { name: 'Ask Questions & Identify Needs', stage: 2 },
+  PRESENT: { name: 'Present Solution', stage: 3 },
+  HANDLE_OBJECTIONS: { name: 'Answer Objections', stage: 4 },
+  CLOSE: { name: 'Close the Sale', stage: 5 },
+  EXPAND: { name: 'Resale & Expansion', stage: 6 },
+  REFERRAL: { name: 'Get Referrals', stage: 7 },
 };
 
-// In-memory drip campaign storage
-let campaigns = [];
-let campaignId = 1;
-
-export const createDripCampaign = (profileId, profileData, platform = 'LinkedIn', icpScore = 0) => {
+export const createDripCampaign = (profileData, platform = 'LinkedIn') => {
   const campaign = {
-    _id: campaignId++,
-    profileId,
+    _id: String(nextId++),
     profileData,
-    platform, // LinkedIn or Twitter
-    icpScore,
+    platform,
     currentStage: 1,
-    status: 'active', // active, paused, completed
+    messages: [],
     replies: [],
-    messages: [], // Generated messages for each stage
+    scheduledMessages: [],
+    status: 'active',
     createdAt: new Date(),
-    scheduledMessages: [], // Array of { stage, scheduledDate, sent, sentDate }
+    updatedAt: new Date(),
   };
-
   campaigns.push(campaign);
   return campaign;
 };
 
 export const getCampaigns = () => campaigns;
 
-export const getCampaignById = (id) => campaigns.find(c => c._id == id);
+export const getCampaignById = (id) => campaigns.find(c => c._id === String(id));
 
-export const getCampaignsByProfile = (profileId) => campaigns.filter(c => c.profileId == profileId);
+export const getCampaignsByProfile = (profileId) =>
+  campaigns.filter(c => c.profileData?._id === String(profileId) || c.profileData?.id === String(profileId));
 
-export const updateCampaignStage = (campaignId, stage) => {
-  const campaign = campaigns.find(c => c._id == campaignId);
-  if (campaign) {
-    campaign.currentStage = stage;
-    campaign.updatedAt = new Date();
-  }
+export const updateCampaignStage = (id, stage) => {
+  const campaign = campaigns.find(c => c._id === String(id));
+  if (!campaign) return null;
+  campaign.currentStage = stage;
+  campaign.updatedAt = new Date();
   return campaign;
 };
 
-export const addReplyToCampaign = (campaignId, reply) => {
-  const campaign = campaigns.find(c => c._id == campaignId);
-  if (campaign) {
-    campaign.replies.push({
-      ...reply,
-      timestamp: new Date(),
-    });
-  }
+export const addReplyToCampaign = (id, reply) => {
+  const campaign = campaigns.find(c => c._id === String(id));
+  if (!campaign) return null;
+  campaign.replies.push({ ...reply, timestamp: new Date() });
+  campaign.updatedAt = new Date();
   return campaign;
-};
-
-export const scheduleMessage = (campaignId, stage, scheduledDate) => {
-  const campaign = campaigns.find(c => c._id == campaignId);
-  if (campaign) {
-    campaign.scheduledMessages.push({
-      stage,
-      scheduledDate,
-      sent: false,
-      sentDate: null,
-    });
-  }
-  return campaign;
-};
-
-export default {
-  DRIP_STAGES,
-  createDripCampaign,
-  getCampaigns,
-  getCampaignById,
-  getCampaignsByProfile,
-  updateCampaignStage,
-  addReplyToCampaign,
-  scheduleMessage,
 };

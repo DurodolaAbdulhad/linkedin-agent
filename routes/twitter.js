@@ -14,7 +14,7 @@ import {
   addReplyToCampaign,
   DRIP_STAGES,
 } from '../models/DripCampaign.js';
-import { profiles } from './profiles.js';
+import { getAllProfiles } from '../services/AppwriteService.js';
 
 const router = express.Router();
 
@@ -150,7 +150,8 @@ router.post('/campaigns', async (req, res) => {
     }
 
     // Find profile
-    const profile = profiles.find(p => p._id == profileId);
+    const allProfiles = await getAllProfiles();
+    const profile = allProfiles.find(p => p.$id == profileId || p._id == profileId);
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
 
     // Create social profile if doesn't exist
