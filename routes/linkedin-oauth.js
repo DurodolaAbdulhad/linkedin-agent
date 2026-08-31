@@ -6,7 +6,7 @@ const router = express.Router();
 
 const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID;
 const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET;
-const REDIRECT_URI = 'https://agent.durodola.africa/api/linkedin/callback';
+const REDIRECT_URI = process.env.LINKEDIN_REDIRECT_URI || 'https://durodola-linkedin-agent.onrender.com/api/linkedin/callback';
 
 // Store tokens in memory (replace with database in production)
 const tokenStore = {};
