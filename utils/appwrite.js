@@ -1,11 +1,20 @@
 import { Client, Databases, ID } from 'node-appwrite';
 
-const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setKey(process.env.APPWRITE_API_KEY);
+let databases = null;
 
-const databases = new Databases(client);
+const APPWRITE_ENDPOINT = process.env.APPWRITE_ENDPOINT;
+const APPWRITE_PROJECT_ID = process.env.APPWRITE_PROJECT_ID;
+const APPWRITE_API_KEY = process.env.APPWRITE_API_KEY;
+
+if (APPWRITE_ENDPOINT && APPWRITE_PROJECT_ID && APPWRITE_API_KEY) {
+  const client = new Client()
+    .setEndpoint(APPWRITE_ENDPOINT)
+    .setProject(APPWRITE_PROJECT_ID)
+    .setKey(APPWRITE_API_KEY);
+  databases = new Databases(client);
+} else {
+  console.warn('⚠️  Appwrite env vars missing — running without Appwrite (in-memory fallback only)');
+}
 const DATABASE_ID = 'linkedin_agent_db';
 
 // Collection IDs
@@ -23,6 +32,10 @@ const COLLECTIONS = {
 
 // Initialize database and collections
 export async function initializeAppwrite() {
+  if (!databases) {
+    console.warn('⚠️  Appwrite skipped — set APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY in Render env vars');
+    return;
+  }
   try {
     console.log('🔧 Initializing Appwrite...');
 
