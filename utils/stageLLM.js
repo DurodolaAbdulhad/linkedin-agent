@@ -1,7 +1,30 @@
-import axios from 'axios';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL = 'llama-3.3-70b-versatile';
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const MODEL = 'mistral';
+async function groqChat(prompt, maxTokens = 300) {
+  const res = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: maxTokens,
+      temperature: 0.7,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Groq ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  return data.choices[0].message.content.trim();
+}
 
 // Stage-specific prompts for the 7-stage sales sequence
 const generateStagePrompt = (stage, profileData, previousReply = null) => {
@@ -83,14 +106,9 @@ export const generateStagedDM = async (stage, profileData, previousReply = null)
   const prompt = generateStagePrompt(stage, profileData, previousReply);
 
   try {
-    const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
-      model: MODEL,
-      prompt: prompt,
-      stream: false,
-    });
-    return response.data.response.trim();
+    return await groqChat(prompt, 300);
   } catch (error) {
-    console.error('LLM Error:', error.message);
+    console.error('[stageLLM] generateStagedDM failed:', error.message);
     throw new Error(`Failed to generate Stage ${stage} DM`);
   }
 };

@@ -1,7 +1,30 @@
-import axios from 'axios';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL = 'llama-3.3-70b-versatile';
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const MODEL = 'mistral';
+async function groqChat(prompt, maxTokens = 120) {
+  const res = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: maxTokens,
+      temperature: 0.75,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Groq ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  return data.choices[0].message.content.trim();
+}
 
 // Twitter-specific prompts (shorter, more conversational, 280 char limit)
 const generateTwitterStagePrompt = (stage, profileData, messageType = 'direct', previousReply = null) => {
@@ -117,27 +140,20 @@ export const generateTwitterMessage = async (stage, profileData, messageType = '
   const prompt = generateTwitterStagePrompt(stage, profileData, messageType, previousReply);
 
   try {
-    const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
-      model: MODEL,
-      prompt: prompt,
-      stream: false,
-    });
+    let message = await groqChat(prompt, 120);
 
-    let message = response.data.response.trim();
-
-    // Ensure Twitter char limit (280 chars for DMs and replies)
+    // Enforce Twitter char limit
     if (message.length > 280) {
       message = message.substring(0, 277) + '...';
     }
 
     return message;
   } catch (error) {
-    console.error('Twitter LLM Error:', error.message);
+    console.error('[twitterLLM] generateTwitterMessage failed:', error.message);
     throw new Error(`Failed to generate Twitter Stage ${stage} message`);
   }
 };
 
-// Twitter engagement strategy
 export const getTwitterEngagementStrategy = (stage, messageType) => {
   const strategies = {
     direct: {
