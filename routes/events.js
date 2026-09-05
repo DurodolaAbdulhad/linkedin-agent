@@ -1,6 +1,7 @@
 import express from 'express';
 import { Event, EVENT_TYPES } from '../models/Event.js';
 import { CampaignAutomation } from '../models/CampaignAutomation.js';
+import { createEvent as createAppwriteEvent, getAllEvents as getAllAppwriteEvents } from '../services/AppwriteService.js';
 
 const router = express.Router();
 
@@ -65,6 +66,15 @@ router.post('/', (req, res) => {
     metadata
   });
 
+  // Persist to Appwrite (non-blocking)
+  createAppwriteEvent({
+    type,
+    profileId: String(profileId),
+    campaignId: campaignId ? String(campaignId) : '',
+    sentiment: sentiment === 'positive' ? 1 : sentiment === 'negative' ? -1 : 0,
+    data: { description, metadata },
+  }).catch(err => console.error('[events] Appwrite persist failed:', err.message));
+
   res.status(201).json(event);
 });
 
@@ -115,6 +125,15 @@ router.post('/reply', (req, res) => {
     sentimentScore: sentiment === 'positive' ? 0.8 : sentiment === 'negative' ? -0.8 : 0,
     metadata: { replyText, source }
   });
+
+  // Persist to Appwrite (non-blocking)
+  createAppwriteEvent({
+    type,
+    profileId: String(profileId),
+    campaignId: String(campaignId),
+    sentiment: sentiment === 'positive' ? 1 : sentiment === 'negative' ? -1 : 0,
+    data: { replyText, source, description: event.description },
+  }).catch(err => console.error('[events/reply] Appwrite persist failed:', err.message));
 
   res.status(201).json(event);
 });
